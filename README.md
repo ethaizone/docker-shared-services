@@ -93,7 +93,7 @@ docker compose up -d
 
 This command will:
 
-- Create the `common_dev_backend_network` (if it doesn't exist).
+- Create the `shared_services_network` (if it doesn't exist).
 
 - Start the `shared_postgres`, `shared_redis`, `shared_mongodb`, and `shared_mysql` containers.
 
@@ -103,7 +103,7 @@ You can verify the services are running:
 
 ```
 docker ps --filter "name=shared_"
-docker network inspect common_dev_backend_network
+docker network inspect shared_services_network
 ```
 
 ### Stopping the Services
@@ -122,16 +122,16 @@ docker compose down -v
 
 ## 3\. Connecting Your Application Projects
 
-Your application's `docker-compose.yml` needs to connect to the shared `common_dev_backend_network`.
+Your application's `docker-compose.yml` needs to connect to the shared `shared_services_network`.
 
 ### Network Configuration
 
-In your application's `docker-compose.yml`, define the `common_dev_backend_network` as an `external` network. This tells Docker Compose that the network already exists and should be used, rather than created by this specific project.
+In your application's `docker-compose.yml`, define the `shared_services_network` as an `external` network. This tells Docker Compose that the network already exists and should be used, rather than created by this specific project.
 
 ```
 # In your application's docker-compose.yml
 networks:
-  common_dev_backend_network:
+  shared_services_network:
     external: true
 ```
 
@@ -160,11 +160,11 @@ services:
       - .:/app # Mount your application code for development
     networks:
       - my_app_internal_network # For internal app services if any
-      - common_dev_backend_network # IMPORTANT: Connect to the shared network
+      - shared_services_network # IMPORTANT: Connect to the shared network
 
 networks:
   my_app_internal_network: # Your application's default internal network
-  common_dev_backend_network:
+  shared_services_network:
     external: true # Reference the external shared network
 ```
 
@@ -271,13 +271,13 @@ You can set up automated daily backups using `cron` on your macOS.
 
 ## 8\. Troubleshooting
 
-- **"Network `common_dev_backend_network` not found":** Ensure you have run `docker compose up -d` in the `~/docker-shared-services` directory at least once to create the network.
+- **"Network `shared_services_network` not found":** Ensure you have run `docker compose up -d` in the `~/docker-shared-services` directory at least once to create the network.
 
 - **"Container already exists":** If you manually created containers or had a previous setup, sometimes `docker compose down` might not fully clean up. Try `docker compose down --remove-orphans` or `docker system prune` (use with caution, this removes all unused Docker data).
 
 - **Connection Refused (from app to shared service):**
 
-  - Verify both your app and shared services are on the `common_dev_backend_network`.
+  - Verify both your app and shared services are on the `shared_services_network`.
 
   - Check container names (`shared_postgres`, `shared_redis`, `shared_mongodb`, `shared_mysql`) match in your app's environment variables.
 

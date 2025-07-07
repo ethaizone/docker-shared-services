@@ -14,7 +14,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - common_dev_backend_network
+      - shared_services_network
 
   # --- Core Cache Service (Redis) ---
   # Internal: accessed via 'shared_redis:6379'
@@ -27,7 +27,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - common_dev_backend_network
+      - shared_services_network
 
   # --- Core Database Service (MongoDB) ---
   # Internal: accessed via 'shared_mongodb:27017'
@@ -44,7 +44,7 @@ services:
     volumes:
       - mongodb_data:/data/db # Persistent data directory
     networks:
-      - common_dev_backend_network
+      - shared_services_network
     # Optional: Configure replica set for full features (e.g., transactions)
     # command: mongod --replSet rs0 --bind_ip_all
     # healthcheck:
@@ -70,7 +70,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql # Persistent data directory
     networks:
-      - common_dev_backend_network
+      - shared_services_network
     healthcheck: # Basic health check to ensure MySQL is ready
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -79,8 +79,8 @@ services:
       start_period: 10s
 
 networks:
-  common_dev_backend_network:
-    name: common_dev_backend_network
+  shared_services_network:
+    name: shared_services_network
 
 volumes:
   postgres_data:
