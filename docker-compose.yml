@@ -1,0 +1,133 @@
+services:
+  # --- Core Database Service (PostgreSQL) ---
+  # Internal: accessed via 'shared_postgres:5432'
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-15-alpine}
+    container_name: shared_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB_NAME:-mydatabase}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - common_dev_backend_network
+
+  # --- Core Cache Service (Redis) ---
+  # Internal: accessed via 'shared_redis:6379'
+  redis:
+    image: redis:${REDIS_VERSION:-7-alpine}
+    container_name: shared_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - common_dev_backend_network
+
+  # --- Core Database Service (MongoDB) ---
+  # Internal: accessed via 'shared_mongodb:27017'
+  mongodb:
+    image: mongo:${MONGO_VERSION:-6.0} # Using MongoDB 6.0 as a common choice
+    container_name: shared_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongouser}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongopassword}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-admin} # The default database for initial user creation
+    volumes:
+      - mongodb_data:/data/db # Persistent data directory
+    networks:
+      - common_dev_backend_network
+    # Optional: Configure replica set for full features (e.g., transactions)
+    # command: mongod --replSet rs0 --bind_ip_all
+    # healthcheck:
+    #   test: echo 'db.runCommand("ping").ok' | mongosh --host localhost:27017 --authenticationDatabase admin -u mongouser -p mongopassword --quiet
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 10s
+
+  # --- Core Database Service (MySQL) ---
+  # Internal: accessed via 'shared_mysql:3306'
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0} # Using MySQL 8.0 as a common choice
+    container_name: shared_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME:-mydatabase}
+      MYSQL_USER: ${MYSQL_USER:-user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+    volumes:
+      - mysql_data:/var/lib/mysql # Persistent data directory
+    networks:
+      - common_dev_backend_network
+    healthcheck: # Basic health check to ensure MySQL is ready
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- Optional: Host Access Services ---
+  # Uncomment these if you need to connect from your host machine (e.g., GUI clients).
+  # They bind ONLY to localhost (127.0.0.1) for security.
+
+  # postgres_host_access:
+  #   image: postgres:${POSTGRES_VERSION:-15-alpine}
+  #   container_name: shared_postgres_host_access
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB_NAME:-mydatabase}
+  #     POSTGRES_USER: ${POSTGRES_USER:-user}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+  #   ports:
+  #     - "127.0.0.1:5433:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - common_dev_backend_network
+
+  # redis_host_access:
+  #   image: redis:${REDIS_VERSION:-7-alpine}
+  #   container_name: shared_redis_host_access
+  #   ports:
+  #     - "127.0.0.1:6380:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - common_dev_backend_network
+
+  # mongodb_host_access:
+  #   image: mongo:${MONGO_VERSION:-6.0}
+  #   container_name: shared_mongodb_host_access
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongouser}
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongopassword}
+  #   ports:
+  #     - "127.0.0.1:27018:27017" # Host port 27018 -> container port 27017
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - common_dev_backend_network
+
+  # mysql_host_access:
+  #   image: mysql:${MYSQL_VERSION:-8.0}
+  #   container_name: shared_mysql_host_access
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE_NAME:-mydatabase}
+  #     MYSQL_USER: ${MYSQL_USER:-user}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+  #   ports:
+  #     - "127.0.0.1:3307:3306" # Host port 3307 -> container port 3306
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - common_dev_backend_network
+
+networks:
+  common_dev_backend_network:
+    name: common_dev_backend_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongodb_data:
+  mysql_data:
