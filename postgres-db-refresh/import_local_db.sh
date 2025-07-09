@@ -42,10 +42,8 @@ for csv_file in $DATA_DIR/*.csv; do
     echo "Skipping table $table"
     continue
   fi
-  echo "Dropping and recreating $table..."
-  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "DROP TABLE IF EXISTS \"$table\" CASCADE;"
-  # Recreate table from schema
-  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -f <(awk "/CREATE TABLE .*${table}.*/{flag=1} /;/{if(flag){print;flag=0}} flag" "$DATA_DIR/schema.sql")
+  echo "Truncating table $table..."
+PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "TRUNCATE TABLE \"$table\" CASCADE;"
   echo "Importing data for $table in chunks..."
   total_lines=$(wc -l < "$csv_file")
   if [ "$total_lines" -le "$chunk_size" ]; then
