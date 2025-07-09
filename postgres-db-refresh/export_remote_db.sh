@@ -23,14 +23,20 @@ fi
 
 mkdir -p "$DATA_DIR"
 
-# Export schema only
-PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" -d "$REMOTE_DB_NAME" --schema-only > "$DATA_DIR/schema.sql"
-
 # List all tables
 TABLES=$(PGPASSWORD="$REMOTE_DB_PASSWORD" psql -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" -d "$REMOTE_DB_NAME" -Atc \
-  "SELECT tablename FROM pg_tables WHERE schemaname='public';")
+  "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;")
 
 for table in $TABLES; do
+  output_file="$DATA_DIR/${table}.sql"
+
+  # Skip if file already exists
+  if [ -f "$output_file" ]; then
+    echo "Skipping $table (already exported)"
+    continue
+  fi
+
+  # Check if table should be skipped (schema only)
   skip=false
   for skip_table in $SKIP_TABLES; do
     if [ "$table" == "$skip_table" ]; then
@@ -38,17 +44,22 @@ for table in $TABLES; do
       break
     fi
   done
+
   if [ "$skip" = true ]; then
-    echo "Skipping table $table (in SKIP_TABLES)"
-    continue
+    echo "Exporting schema only for $table (in SKIP_TABLES)..."
+    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+      -d "$REMOTE_DB_NAME" --schema-only --table="$table" > "$output_file"
+  else
+    echo "Exporting schema and data for $table..."
+    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+      -d "$REMOTE_DB_NAME" --table="$table" > "$output_file"
   fi
-  if [ -f "$DATA_DIR/$table.csv" ]; then
-    echo "Skipping table $table (already exported)"
-    continue
+
+  # Remove empty files (tables with no data)
+  if [ ! -s "$output_file" ]; then
+    rm -f "$output_file"
+    echo "  No data found for $table, removed empty file"
   fi
-  echo "Exporting data for $table..."
-  PGPASSWORD="$REMOTE_DB_PASSWORD" psql -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" -d "$REMOTE_DB_NAME" -c \
-    "\COPY \"$table\" TO '$DATA_DIR/$table.csv' CSV"
 done
 
-echo "Export complete. Schema and table data are in $DATA_DIR/"
+echo "Export complete. Table dumps are in $DATA_DIR/"

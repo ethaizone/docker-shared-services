@@ -19,54 +19,82 @@ if [ "$LOCAL_DB_HOST" != "localhost" ] && [ "$LOCAL_DB_HOST" != "127.0.0.1" ]; t
   exit 1
 fi
 
-chunk_size=${CHUNK_SIZE:-10000}
+# Function to drop all objects in the public schema
+drop_all_tables() {
+  echo "Dropping all objects in the public schema..."
 
-# Preprocess schema.sql to remove OWNER TO and GRANT lines
-CLEANED_SCHEMA="$DATA_DIR/schema.cleaned.sql"
-grep -v -E 'OWNER TO|GRANT ' "$DATA_DIR/schema.sql" > "$CLEANED_SCHEMA"
+  # Disable triggers and constraints temporarily
+  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "
+    SET session_replication_role = 'replica';
 
-# Import cleaned schema
-PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -f "$CLEANED_SCHEMA"
+    -- Drop all tables
+    SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;'
+    FROM pg_tables
+    WHERE schemaname = 'public';
 
-# Import data for each table
-for csv_file in $DATA_DIR/*.csv; do
-  table=$(basename "$csv_file" .csv)
-  skip=false
-  for skip_table in $SKIP_TABLES; do
-    if [ "$table" == "$skip_table" ]; then
-      skip=true
-      break
-    fi
-  done
-  if [ "$skip" = true ]; then
-    echo "Skipping table $table"
-    continue
-  fi
-  echo "Truncating table $table..."
-PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "TRUNCATE TABLE \"$table\" CASCADE;"
-  echo "Importing data for $table in chunks..."
-  total_lines=$(wc -l < "$csv_file")
-  if [ "$total_lines" -le "$chunk_size" ]; then
-    PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" <<SQL
-BEGIN;
-SET session_replication_role = 'replica';
-\COPY "$table" FROM '$csv_file' CSV;
-SET session_replication_role = 'origin';
-COMMIT;
-SQL
-  else
-    split -l $chunk_size "$csv_file" "$csv_file.chunk."
-    for chunk in "$csv_file".chunk.*; do
-      PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" <<SQL
-BEGIN;
-SET session_replication_role = 'replica';
-\COPY "$table" FROM '$chunk' CSV;
-SET session_replication_role = 'origin';
-COMMIT;
-SQL
-      rm "$chunk"
+    -- Drop all views
+    SELECT 'DROP VIEW IF EXISTS ' || table_name || ' CASCADE;'
+    FROM information_schema.views
+    WHERE table_schema = 'public';
+
+    -- Drop all functions
+    SELECT 'DROP FUNCTION IF EXISTS ' || routine_name || ' CASCADE;'
+    FROM information_schema.routines
+    WHERE routine_schema = 'public';
+
+    -- Drop all sequences
+    SELECT 'DROP SEQUENCE IF EXISTS ' || sequence_name || ' CASCADE;'
+    FROM information_schema.sequences
+    WHERE sequence_schema = 'public';
+  " | grep '^DROP' | PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -v ON_ERROR_STOP=0
+
+  # Re-enable triggers and constraints
+  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "
+    SET session_replication_role = 'origin';
+  "
+
+  echo "All objects in public schema have been dropped."
+}
+
+# Function to process SQL files
+process_sql_files() {
+  # Process each SQL file in the data directory
+  for sql_file in "$DATA_DIR"/*.sql; do
+    [ -f "$sql_file" ] || continue  # Skip if no .sql files found
+
+    filename=$(basename "$sql_file")
+    table_name="${filename%.*}"  # Remove .sql extension to get table name
+
+    # Check if table is in skip list
+    skip=false
+    for skip_table in $SKIP_TABLES; do
+      if [ "$table_name" == "$skip_table" ]; then
+        skip=true
+        break
+      fi
     done
-  fi
-done
 
-echo "Import complete."
+    if [ "$skip" = true ]; then
+      echo "Skipping table $table_name (in SKIP_TABLES)"
+      continue
+    fi
+
+    echo "Importing $filename..."
+
+    # Clean the SQL file to remove owner and grant statements
+    CLEANED_SQL="${sql_file}.cleaned"
+    grep -v -E 'OWNER TO|GRANT ' "$sql_file" > "$CLEANED_SQL"
+
+    # Import the SQL file
+    PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -f "$CLEANED_SQL"
+
+    # Clean up
+    rm -f "$CLEANED_SQL"
+  done
+}
+
+# Main execution
+# drop_all_tables
+process_sql_files
+
+echo "Import complete. All tables have been imported from $DATA_DIR/"
