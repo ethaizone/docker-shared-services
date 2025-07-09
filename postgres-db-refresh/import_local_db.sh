@@ -47,11 +47,23 @@ PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U 
   echo "Importing data for $table in chunks..."
   total_lines=$(wc -l < "$csv_file")
   if [ "$total_lines" -le "$chunk_size" ]; then
-    PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "\COPY \"$table\" FROM '$csv_file' CSV"
+    PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" <<SQL
+BEGIN;
+SET session_replication_role = 'replica';
+\COPY "$table" FROM '$csv_file' CSV;
+SET session_replication_role = 'origin';
+COMMIT;
+SQL
   else
     split -l $chunk_size "$csv_file" "$csv_file.chunk."
     for chunk in "$csv_file".chunk.*; do
-      PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "\COPY \"$table\" FROM '$chunk' CSV"
+      PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" <<SQL
+BEGIN;
+SET session_replication_role = 'replica';
+\COPY "$table" FROM '$chunk' CSV;
+SET session_replication_role = 'origin';
+COMMIT;
+SQL
       rm "$chunk"
     done
   fi
