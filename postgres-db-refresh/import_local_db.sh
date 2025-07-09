@@ -19,43 +19,6 @@ if [ "$LOCAL_DB_HOST" != "localhost" ] && [ "$LOCAL_DB_HOST" != "127.0.0.1" ]; t
   exit 1
 fi
 
-# Function to drop all objects in the public schema
-drop_all_tables() {
-  echo "Dropping all objects in the public schema..."
-
-  # Disable triggers and constraints temporarily
-  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "
-    SET session_replication_role = 'replica';
-
-    -- Drop all tables
-    SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;'
-    FROM pg_tables
-    WHERE schemaname = 'public';
-
-    -- Drop all views
-    SELECT 'DROP VIEW IF EXISTS ' || table_name || ' CASCADE;'
-    FROM information_schema.views
-    WHERE table_schema = 'public';
-
-    -- Drop all functions
-    SELECT 'DROP FUNCTION IF EXISTS ' || routine_name || ' CASCADE;'
-    FROM information_schema.routines
-    WHERE routine_schema = 'public';
-
-    -- Drop all sequences
-    SELECT 'DROP SEQUENCE IF EXISTS ' || sequence_name || ' CASCADE;'
-    FROM information_schema.sequences
-    WHERE sequence_schema = 'public';
-  " | grep '^DROP' | PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -v ON_ERROR_STOP=0
-
-  # Re-enable triggers and constraints
-  PGPASSWORD="$LOCAL_DB_PASSWORD" psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c "
-    SET session_replication_role = 'origin';
-  "
-
-  echo "All objects in public schema have been dropped."
-}
-
 # Function to process SQL files
 process_sql_files() {
   # Process each SQL file in the data directory
@@ -94,7 +57,6 @@ process_sql_files() {
 }
 
 # Main execution
-# drop_all_tables
 process_sql_files
 
 echo "Import complete. All tables have been imported from $DATA_DIR/"
