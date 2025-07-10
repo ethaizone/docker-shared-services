@@ -21,6 +21,8 @@ Scripts to clone a remote Postgres database, split data into files, and import i
    ./export_remote_db.sh
    ```
 
+   Note: The script will create a `data` directory in the current directory and store the split SQL files there. It will skip if the sql files already exist.
+
 3. **Important**: Before importing, manually drop all existing tables in your local database to avoid conflicts:
 
    ```bash
@@ -43,7 +45,7 @@ Scripts to clone a remote Postgres database, split data into files, and import i
 ## Notes
 
 - Only works if LOCAL_DB_HOST is `localhost` or `127.0.0.1` (for safety).
-- Data is split per table and imported in chunks.
+- Data is split per table.
 - Skipped tables are defined in `.env` as `SKIP_TABLES`.
 - The import script will fail if tables already exist in the target database.
 - Make sure to backup your local database before dropping any tables.
