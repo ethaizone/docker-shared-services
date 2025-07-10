@@ -4,39 +4,25 @@ This repository contains the `docker-compose.yml` for our common development ser
 
 ## Table of Contents
 
-1.  [Why Shared Services?](https://www.google.com/search?q=%23why-shared-services "null")
-
-2.  [Getting Started](https://www.google.com/search?q=%23getting-started "null")
-
-    - [Prerequisites](https://www.google.com/search?q=%23prerequisites "null")
-
-    - [Initial Setup](https://www.google.com/search?q=%23initial-setup "null")
-
-    - [Starting the Services](https://www.google.com/search?q=%23starting-the-services "null")
-
-    - [Stopping the Services](https://www.google.com/search?q=%23stopping-the-services "null")
-
-3.  [Connecting Your Application Projects](https://www.google.com/search?q=%23connecting-your-application-projects "null")
-
-    - [Network Configuration](https://www.google.com/search?q=%23network-configuration "null")
-
-    - [Example Application `docker-compose.yml`](https://www.google.com/search?q=%23example-application-docker-composeyml "null")
-
-4.  [Accessing Services from Your Host Machine (Optional)](https://www.google.com/search?q=%23accessing-services-from-your-host-machine-optional "null")
-
-5.  [Managing Data (Volumes)](https://www.google.com/search?q=%23managing-data-volumes "null")
-
-    - [Backup](https://www.google.com/search?q=%23backup "null")
-
-    - [Restore](https://www.google.com/search?q=%23restore "null")
-
-    - [Cleaning Up Data](https://www.google.com/search?q=%23cleaning-up-data "null")
-
-6.  [Configuration](https://www.google.com/search?q=%23configuration "null")
-
-7.  [Automated Backups](https://www.google.com/search?q=%23automated-backups "null")
-
-8.  [Troubleshooting](https://www.google.com/search?q=%23troubleshooting "null")
+- [Shared Docker Development Services](#shared-docker-development-services)
+  - [Table of Contents](#table-of-contents)
+  - [1. Why Shared Services?](#1-why-shared-services)
+  - [2. Getting Started](#2-getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Initial Setup](#initial-setup)
+    - [Starting the Services](#starting-the-services)
+    - [Stopping the Services](#stopping-the-services)
+  - [3. Connecting Your Application Projects](#3-connecting-your-application-projects)
+    - [Network Configuration](#network-configuration)
+    - [Example Application `docker-compose.yml`](#example-application-docker-composeyml)
+  - [4. Accessing Services from Your Host Machine (Optional)](#4-accessing-services-from-your-host-machine-optional)
+  - [5. Managing Data (Volumes)](#5-managing-data-volumes)
+    - [Backup](#backup)
+    - [Restore](#restore)
+    - [Cleaning Up Data](#cleaning-up-data)
+  - [6. Configuration](#6-configuration)
+  - [7. Automated Backups](#7-automated-backups)
+  - [8. Troubleshooting](#8-troubleshooting)
 
 ## 1\. Why Shared Services?
 
