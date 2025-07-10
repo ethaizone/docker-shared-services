@@ -1,28 +1,26 @@
-# Shared Docker Development Services
+# Shared Docker Development Services <!-- omit in toc -->
 
 This repository contains the `docker-compose.yml` for our common development services (PostgreSQL, Redis, MongoDB, MySQL, etc.) that are designed to be shared across multiple application projects on a developer's local machine.
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
-- [Shared Docker Development Services](#shared-docker-development-services)
-  - [Table of Contents](#table-of-contents)
-  - [1. Why Shared Services?](#1-why-shared-services)
-  - [2. Getting Started](#2-getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Initial Setup](#initial-setup)
-    - [Starting the Services](#starting-the-services)
-    - [Stopping the Services](#stopping-the-services)
-  - [3. Connecting Your Application Projects](#3-connecting-your-application-projects)
-    - [Network Configuration](#network-configuration)
-    - [Example Application `docker-compose.yml`](#example-application-docker-composeyml)
-  - [4. Accessing Services from Your Host Machine (Optional)](#4-accessing-services-from-your-host-machine-optional)
-  - [5. Managing Data (Volumes)](#5-managing-data-volumes)
-    - [Backup](#backup)
-    - [Restore](#restore)
-    - [Cleaning Up Data](#cleaning-up-data)
-  - [6. Configuration](#6-configuration)
-  - [7. Automated Backups](#7-automated-backups)
-  - [8. Troubleshooting](#8-troubleshooting)
+- [1. Why Shared Services?](#1-why-shared-services)
+- [2. Getting Started](#2-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Initial Setup](#initial-setup)
+  - [Starting the Services](#starting-the-services)
+  - [Stopping the Services](#stopping-the-services)
+- [3. Connecting Your Application Projects](#3-connecting-your-application-projects)
+  - [Network Configuration](#network-configuration)
+  - [Example Application `docker-compose.yml`](#example-application-docker-composeyml)
+- [4. Accessing Services from Your Host Machine (Optional)](#4-accessing-services-from-your-host-machine-optional)
+- [5. Managing Data (Volumes)](#5-managing-data-volumes)
+  - [Backup](#backup)
+  - [Restore](#restore)
+  - [Cleaning Up Data](#cleaning-up-data)
+- [6. Configuration](#6-configuration)
+- [7. Automated Backups](#7-automated-backups)
+- [8. Troubleshooting](#8-troubleshooting)
 
 ## 1\. Why Shared Services?
 
