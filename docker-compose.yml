@@ -78,6 +78,28 @@ services:
       retries: 5
       start_period: 10s
 
+  # --- Core Message Broker Service (RabbitMQ) ---
+  # Internal: accessed via 'shared_rabbitmq:5672', management UI at 'localhost:15672'
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: shared_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-password}
+    ports:
+      - "127.0.0.1:5672:5672" # AMQP protocol
+      - "127.0.0.1:15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - shared_services_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 networks:
   shared_services_network:
     name: shared_services_network
@@ -87,3 +109,4 @@ volumes:
   redis_data:
   mongodb_data:
   mysql_data:
+  rabbitmq_data:

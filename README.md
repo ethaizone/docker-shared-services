@@ -1,6 +1,6 @@
 # Shared Docker Development Services <!-- omit in toc -->
 
-This repository contains the `docker-compose.yml` for our common development services (PostgreSQL, Redis, MongoDB, MySQL, etc.) that are designed to be shared across multiple application projects on a developer's local machine.
+This repository contains the `docker-compose.yml` for our common development services (PostgreSQL, Redis, MongoDB, MySQL, RabbitMQ, etc.) that are designed to be shared across multiple application projects on a developer's local machine.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -26,7 +26,7 @@ This repository contains the `docker-compose.yml` for our common development ser
 
 To enhance development efficiency and reduce resource consumption on individual developer machines, we centralize core services like databases and caches. This approach provides:
 
-- **Resource Efficiency:** One instance of Postgres/Redis/Mongo/MySQL instead of multiple per project.
+- **Resource Efficiency:** One instance of Postgres/Redis/Mongo/MySQL/RabbitMQ instead of multiple per project.
 
 - **Simplified Management:** Start/stop all common services with a single command.
 
@@ -79,15 +79,16 @@ This command will:
 
 - Create the `shared_services_network` (if it doesn't exist).
 
-- Start the `shared_postgres`, `shared_redis`, `shared_mongodb`, and `shared_mysql` containers.
+- Start the `shared_postgres`, `shared_redis`, `shared_mongodb`, `shared_mysql`, `shared_rabbitmq` containers.
 
-- Create named Docker volumes (`postgres_data`, `redis_data`, `mongodb_data`, `mysql_data`) to persist your data.
+- Create named Docker volumes (`postgres_data`, `redis_data`, `mongodb_data`, `mysql_data`, `rabbitmq_data`) to persist your data.
 
 You can verify the services are running:
 
 ```
 docker ps --filter "name=shared_"
 docker network inspect shared_services_network
+# To check RabbitMQ management UI, open http://localhost:15672 in your browser.
 ```
 
 ### Stopping the Services
@@ -169,6 +170,8 @@ If you need to connect to these services from your host machine (e.g., using a G
     - MongoDB: `localhost:27018`
 
     - MySQL: `localhost:3307`
+
+    - RabbitMQ: `localhost:5672`
 
     These ports are bound _only_ to `127.0.0.1` (localhost) for security, meaning only your machine can connect.
 
