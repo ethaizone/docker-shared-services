@@ -163,13 +163,13 @@ If you need to connect to these services from your host machine (e.g., using a G
 
 2.  **Restart** the shared services: `docker compose up -d` in `~/docker-shared-services`.
 
-    - Postgres: `localhost:5433`
+    - Postgres: `localhost:5432`
 
-    - Redis: `localhost:6380`
+    - Redis: `localhost:6379`
 
-    - MongoDB: `localhost:27018`
+    - MongoDB: `localhost:27017`
 
-    - MySQL: `localhost:3307`
+    - MySQL: `localhost:3306`
 
     - RabbitMQ: `localhost:5672`
 
