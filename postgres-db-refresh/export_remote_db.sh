@@ -13,6 +13,8 @@ else
 fi
 
 DATA_DIR="data"
+TABLES_DIR="$DATA_DIR/tables"
+
 
 echo "SKIP_TABLES: $SKIP_TABLES"
 
@@ -21,14 +23,14 @@ if [ "$REMOTE_DB_HOST" == "localhost" ] || [ "$REMOTE_DB_HOST" == "127.0.0.1" ];
   exit 1
 fi
 
-mkdir -p "$DATA_DIR"
+mkdir -p "$TABLES_DIR"
 
 # List all tables
 TABLES=$(PGPASSWORD="$REMOTE_DB_PASSWORD" psql -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" -d "$REMOTE_DB_NAME" -Atc \
   "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;")
 
 for table in $TABLES; do
-  output_file="$DATA_DIR/${table}.sql"
+  output_file="$TABLES_DIR/${table}.sql"
 
   # Skip if file already exists
   if [ -f "$output_file" ]; then
@@ -62,4 +64,35 @@ for table in $TABLES; do
   fi
 done
 
-echo "Export complete. Table dumps are in $DATA_DIR/"
+echo "Export complete. Table dumps are in $TABLES_DIR/"
+
+# --- Export views ---
+VIEWS_DIR="$DATA_DIR/views"
+mkdir -p "$VIEWS_DIR"
+
+# Get all view names in public schema
+VIEWS=$(PGPASSWORD="$REMOTE_DB_PASSWORD" psql -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" -d "$REMOTE_DB_NAME" -Atc \
+  "SELECT table_name FROM information_schema.views WHERE table_schema = 'public' ORDER BY table_name;")
+
+for view in $VIEWS; do
+  view_file="$VIEWS_DIR/${view}.sql"
+
+  # Skip if file already exists
+  if [ -f "$view_file" ]; then
+    echo "Skipping view $view (already exported)"
+    continue
+  fi
+
+  echo "Exporting definition for view $view..."
+  # Dump only the view definition
+  PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+    -d "$REMOTE_DB_NAME" --schema-only --table="$view" > "$view_file"
+
+  # Remove empty files (shouldn't happen for views)
+  if [ ! -s "$view_file" ]; then
+    rm -f "$view_file"
+    echo "  No definition found for view $view, removed empty file"
+  fi
+done
+
+echo "View export complete. View definitions are in $VIEWS_DIR/"
