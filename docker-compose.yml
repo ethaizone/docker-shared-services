@@ -35,8 +35,8 @@ services:
     image: mongo:${MONGO_VERSION:-6.0} # Using MongoDB 6.0 as a common choice
     container_name: shared_mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongouser}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongopassword}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-admin} # The default database for initial user creation
     # They bind ONLY to localhost (127.0.0.1) for security.
     ports:
