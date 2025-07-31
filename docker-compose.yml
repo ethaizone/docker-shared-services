@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     # They bind ONLY to localhost (127.0.0.1) for security.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,7 +23,7 @@ services:
     container_name: shared_redis
     # They bind ONLY to localhost (127.0.0.1) for security.
     ports:
-      - "127.0.0.1:6379:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -40,7 +40,7 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-admin} # The default database for initial user creation
     # They bind ONLY to localhost (127.0.0.1) for security.
     ports:
-      - "127.0.0.1:27017:27017"
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db # Persistent data directory
     networks:
@@ -66,7 +66,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
     # They bind ONLY to localhost (127.0.0.1) for security.
     ports:
-      - "127.0.0.1:3306:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql # Persistent data directory
     networks:
@@ -87,8 +87,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-password}
     ports:
-      - "127.0.0.1:5672:5672" # AMQP protocol
-      - "127.0.0.1:15672:15672" # Management UI
+      - "5672:5672" # AMQP protocol
+      - "15672:15672" # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
