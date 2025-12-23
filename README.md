@@ -51,11 +51,10 @@ To enhance development efficiency and reduce resource consumption on individual 
     It's recommended to clone this repository to a consistent location, e.g., in your home directory:
 
     ```
-    git clone git@github.com:your-org/docker-shared-services.git ~/docker-shared-services
+    git clone git@github.com:ethaizone/docker-shared-services.git ~/docker-shared-services
     cd ~/docker-shared-services
+    git submodule update --init --recursive
     ```
-
-    (Replace `git@github.com:your-org/docker-shared-services.git` with the actual URL of your repository.)
 
 2.  Create your local .env file:
 
@@ -289,3 +288,7 @@ You can set up automated daily backups using `cron` on your macOS.
   - Ensure the containers are running when the backup script executes.
 
 - **MongoDB Authentication:** If you enable authentication for MongoDB (which is recommended for production, even dev if you test it), ensure `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` are correctly set in your `.env` and used in your application's connection string.
+
+## About openmemory
+
+I added openmemory to submodule but I found I need to use this version or else it will failed. For now just clone and `docker compose up -d` only.
