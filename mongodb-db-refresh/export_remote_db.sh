@@ -15,7 +15,10 @@ fi
 DATA_DIR="data"
 COLLECTIONS_DIR="$DATA_DIR/collections"
 
+COMPRESS_EXPORTS="${COMPRESS_EXPORTS:-true}"
+
 echo "SKIP_COLLECTIONS: $SKIP_COLLECTIONS"
+echo "COMPRESS_EXPORTS: $COMPRESS_EXPORTS"
 
 if [ "$REMOTE_DB_HOST" == "localhost" ] || [ "$REMOTE_DB_HOST" == "127.0.0.1" ]; then
   echo "[ERROR] Refusing to export from localhost as remote."
@@ -62,19 +65,39 @@ for collection in $COLLECTIONS; do
       mongodump --host "$REMOTE_DB_HOST" --port "$REMOTE_DB_PORT" $AUTH_PARAMS \
         --db "$REMOTE_DB_NAME" --collection "$collection" \
         --out "$COLLECTIONS_DIR"
+
+      if [ "$COMPRESS_EXPORTS" = true ]; then
+        bson_file="$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.bson"
+        if [ -f "$bson_file" ]; then
+          echo "  Compressing $collection.bson..."
+          gzip "$bson_file"
+        fi
+      fi
     else
       # Fallback to mongosh if mongodump is not available
       echo "mongodump not found, using mongosh to export data..."
       mkdir -p "$COLLECTIONS_DIR/$REMOTE_DB_NAME"
+      json_file="$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.json"
       mongosh --host "$REMOTE_DB_HOST" --port "$REMOTE_DB_PORT" $AUTH_PARAMS \
         "$REMOTE_DB_NAME" --quiet --norc \
-        --eval "db.${collection}.find().forEach(doc => printjson(doc))" > "$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.json"
+        --eval "db.${collection}.find().forEach(doc => printjson(doc))" > "$json_file"
+
+      if [ "$COMPRESS_EXPORTS" = true ] && [ -f "$json_file" ]; then
+        echo "  Compressing $collection.json..."
+        gzip "$json_file"
+      fi
     fi
   fi
 
   # Check if the export was successful
-  if [ ! -f "$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.bson" ]; then
-    echo "  Warning: Export may have failed for $collection"
+  if [ "$COMPRESS_EXPORTS" = true ]; then
+    if [ ! -f "$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.bson.gz" ] && [ ! -f "$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.json.gz" ]; then
+      echo "  Warning: Export may have failed for $collection"
+    fi
+  else
+    if [ ! -f "$COLLECTIONS_DIR/$REMOTE_DB_NAME/$collection.bson" ]; then
+      echo "  Warning: Export may have failed for $collection"
+    fi
   fi
 done
 

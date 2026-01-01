@@ -15,8 +15,10 @@ fi
 DATA_DIR="data"
 TABLES_DIR="$DATA_DIR/tables"
 
+COMPRESS_EXPORTS="${COMPRESS_EXPORTS:-true}"
 
 echo "SKIP_TABLES: $SKIP_TABLES"
+echo "COMPRESS_EXPORTS: $COMPRESS_EXPORTS"
 
 if [ "$REMOTE_DB_HOST" == "localhost" ] || [ "$REMOTE_DB_HOST" == "127.0.0.1" ]; then
   echo "[ERROR] Refusing to export from localhost as remote."
@@ -49,12 +51,26 @@ for table in $TABLES; do
 
   if [ "$skip" = true ]; then
     echo "Exporting schema only for $table (in SKIP_TABLES)..."
-    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
-      -d "$REMOTE_DB_NAME" --schema-only --table="$table" > "$output_file"
+    if [ "$COMPRESS_EXPORTS" = true ]; then
+      output_file="$TABLES_DIR/${table}.sql.gz"
+      PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+        -d "$REMOTE_DB_NAME" --schema-only --table="$table" | gzip > "$output_file"
+    else
+      output_file="$TABLES_DIR/${table}.sql"
+      PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+        -d "$REMOTE_DB_NAME" --schema-only --table="$table" > "$output_file"
+    fi
   else
     echo "Exporting schema and data for $table..."
-    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
-      -d "$REMOTE_DB_NAME" --table="$table" > "$output_file"
+    if [ "$COMPRESS_EXPORTS" = true ]; then
+      output_file="$TABLES_DIR/${table}.sql.gz"
+      PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+        -d "$REMOTE_DB_NAME" --table="$table" | gzip > "$output_file"
+    else
+      output_file="$TABLES_DIR/${table}.sql"
+      PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+        -d "$REMOTE_DB_NAME" --table="$table" > "$output_file"
+    fi
   fi
 
   # Remove empty files (tables with no data)
@@ -75,7 +91,11 @@ VIEWS=$(PGPASSWORD="$REMOTE_DB_PASSWORD" psql -h "$REMOTE_DB_HOST" -p "$REMOTE_D
   "SELECT table_name FROM information_schema.views WHERE table_schema = 'public' ORDER BY table_name;")
 
 for view in $VIEWS; do
-  view_file="$VIEWS_DIR/${view}.sql"
+  if [ "$COMPRESS_EXPORTS" = true ]; then
+    view_file="$VIEWS_DIR/${view}.sql.gz"
+  else
+    view_file="$VIEWS_DIR/${view}.sql"
+  fi
 
   # Skip if file already exists
   if [ -f "$view_file" ]; then
@@ -85,8 +105,13 @@ for view in $VIEWS; do
 
   echo "Exporting definition for view $view..."
   # Dump only the view definition
-  PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
-    -d "$REMOTE_DB_NAME" --schema-only --table="$view" > "$view_file"
+  if [ "$COMPRESS_EXPORTS" = true ]; then
+    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+      -d "$REMOTE_DB_NAME" --schema-only --table="$view" | gzip > "$view_file"
+  else
+    PGPASSWORD="$REMOTE_DB_PASSWORD" pg_dump -h "$REMOTE_DB_HOST" -p "$REMOTE_DB_PORT" -U "$REMOTE_DB_USER" \
+      -d "$REMOTE_DB_NAME" --schema-only --table="$view" > "$view_file"
+  fi
 
   # Remove empty files (shouldn't happen for views)
   if [ ! -s "$view_file" ]; then
